@@ -33,7 +33,9 @@ pipeline {
         stage('Deploy to Minikube') {
             steps {
                 sh '''
-                    kubectl apply -f ./deployment.yaml
+                     withEnv(["KUBECONFIG=/var/jenkins_home/.kube/config"]) {
+                    sh 'kubectl apply -f deployment.yaml'
+                }
                     kubectl apply -f ./service.yaml
                 '''
             }
