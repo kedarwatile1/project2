@@ -4,7 +4,8 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/kedarwatile1/project2.git'
+                sh 'echo passed'
+               // git 'https://github.com/kedarwatile1/project2.git'
             }
         }
 
