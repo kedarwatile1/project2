@@ -1,0 +1,7 @@
+FROM bitnami/kubectl:latest
+
+# Jenkins runs as root inside agent
+USER root
+
+# Keep container alive for Jenkins steps
+ENTRYPOINT ["cat"]
