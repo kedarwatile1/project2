@@ -9,8 +9,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                echo "Checking out code"
-                git 'https://github.com/kedarwatile1/project2.git'
+                echo "Source code checked out by Jenkins SCM"
             }
         }
 
