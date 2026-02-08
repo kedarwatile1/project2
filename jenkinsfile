@@ -24,7 +24,7 @@ pipeline {
                 else
                   echo "kubectl already installed"
                 fi
-                kubectl version --client
+               # kubectl version --client
                 '''
             }
         }
@@ -32,8 +32,8 @@ pipeline {
         stage('Verify Cluster') {
             steps {
                 sh '''
-                kubectl get nodes
-                kubectl get ns
+                ./kubectl get nodes
+                ./kubectl get ns
                 '''
             }
         }
@@ -41,8 +41,8 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
-                kubectl apply -f deployment.yaml
-                kubectl apply -f service.yaml
+                ./kubectl apply -f deployment.yaml
+                ./kubectl apply -f service.yaml
                 '''
             }
         }
