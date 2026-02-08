@@ -1,0 +1,12 @@
+pipeline {
+    agent any
+    environment {
+        DOCKER_IMAGE = "my-nginx:1.0"
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+              sh 'echo passed'
+            // echo   git 'https://github.com/kedarwatile1/project2.git'
+            }
+        }
