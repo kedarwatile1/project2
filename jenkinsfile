@@ -1,64 +1,47 @@
 pipeline {
-  agent {
-    docker {
-      image 'abhishekf5/maven-abhishek-docker-agent:v1'
-      args '--user root -v /var/run/docker.sock:/var/run/docker.sock' // mount Docker socket to access the host's Docker daemon
-    }
-  }
+    agent any
+
     stages {
         stage('Checkout') {
             steps {
-              sh 'echo passed'
-            // echo   git 'https://github.com/kedarwatile1/project2.git'
+                git 'https://github.com/kedarwatile1/project2.git'
             }
         }
-    stage('Install kubectl') {
+
+        stage('Install kubectl') {
             steps {
                 sh '''
-                if ! command -v kubectl >/dev/null 2>&1; then
-                  echo "Installing kubectl..."
-                  curl -LO https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl
-                  chmod +x kubectl
-                 eval $(minikube -p minikube docker-env)
-                docker build -t $DOCKER_IMAGE .
-                kubectl apply -f deployment.yaml
-                kubectl expose deployment nginx-deployment --type=NodePort --port=80
-                 # sudo mv kubectl /usr/local/bin/
-                else
-                  echo "kubectl already installed"
-                fi
-               # kubectl version --client
+                    command -v kubectl || (
+                        curl -LO https://dl.k8s.io/release/stable.txt
+                        curl -LO https://dl.k8s.io/release/v1.35.0/bin/linux/amd64/kubectl
+                        chmod +x kubectl
+                        mv kubectl /usr/local/bin/
+                    )
                 '''
             }
         }
+
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh '''
-                    echo 'passed'
-                  // # eval $(minikube -p minikube docker-env)
-                   // # docker build -t $DOCKER_IMAGE .
-                    '''
-                }
+                sh '''
+                    docker build -t my-nginx:1.0 .
+                '''
             }
         }
+
         stage('Deploy to Minikube') {
             steps {
-                script {
-                    sh '''
-                  // # kubectl apply -f deployment.yaml
-                   // # kubectl expose deployment nginx-deployment --type=NodePort --port=80
-                    '''
-                }
+                sh '''
+                    kubectl apply -f deployment.yaml
+                    kubectl apply -f service.yaml
+                '''
             }
         }
     }
+
     post {
-        success {
-            echo 'Deployment Successful!'
-        }
-        failure {
-            echo 'Deployment Failed!'
+        always {
+            echo 'Pipeline finished!'
         }
     }
 }
