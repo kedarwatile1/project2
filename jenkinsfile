@@ -2,12 +2,6 @@ pipeline {
     agent any
 
     stages {
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/kedarwatile1/project2.git'
-            }
-        }
-
         stage('Build') {
             steps {
                 echo 'Build stage'
