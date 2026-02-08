@@ -1,8 +1,17 @@
 pipeline {
     agent {
-        dockerfile {
-            filename 'Dockerfile.jenkins-agent'
-            args '-v $HOME/.kube:/root/.kube'
+        kubernetes {
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: kubectl
+    image: bitnami/kubectl:latest
+    command:
+    - cat
+    tty: true
+"""
         }
     }
 
@@ -14,34 +23,42 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                echo "Code already checked out by Jenkins SCM"
+                container('kubectl') {
+                    echo "Source code checked out by Jenkins SCM"
+                }
             }
         }
 
         stage('Verify Kubernetes Access') {
             steps {
-                sh '''
-                kubectl version --client
-                kubectl get nodes
-                '''
+                container('kubectl') {
+                    sh '''
+                    kubectl version --client
+                    kubectl get nodes
+                    '''
+                }
             }
         }
 
         stage('Deploy to Minikube') {
             steps {
-                sh '''
-                kubectl apply -f deployment.yaml
-                kubectl apply -f service.yaml
-                '''
+                container('kubectl') {
+                    sh '''
+                    kubectl apply -f deployment.yaml
+                    kubectl apply -f service.yaml
+                    '''
+                }
             }
         }
 
         stage('Verify Pods') {
             steps {
-                sh '''
-                kubectl get pods
-                kubectl get svc
-                '''
+                container('kubectl') {
+                    sh '''
+                    kubectl get pods
+                    kubectl get svc
+                    '''
+                }
             }
         }
     }
