@@ -1,12 +1,62 @@
 pipeline {
     agent any
+
     environment {
-        DOCKER_IMAGE = "my-nginx:1.0"
+        KUBECONFIG = '/var/jenkins_home/.kube/config'
     }
+
     stages {
+
         stage('Checkout') {
             steps {
-              sh 'echo passed'
-            // echo   git 'https://github.com/kedarwatile1/project2.git'
+                echo 'Checking out code...'
+              //  git 'https://github.com/kedarwatile1/project2.git'
             }
         }
+
+        stage('Install kubectl') {
+            steps {
+                sh '''
+                    if ! command -v kubectl >/dev/null 2>&1; then
+                        echo "Installing kubectl..."
+                        curl -LO https://dl.k8s.io/release/stable.txt
+                        curl -LO https://dl.k8s.io/release/$(cat stable.txt)/bin/linux/amd64/kubectl
+                        chmod +x kubectl
+                        mv kubectl /usr/local/bin/
+                    else
+                        echo "kubectl already installed"
+                    fi
+                '''
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                    if ! command -v docker >/dev/null 2>&1; then
+                        echo "Docker is not installed! Please use an agent image with Docker installed."
+                        exit 1
+                    fi
+                    docker build -t my-nginx:1.0 .
+                '''
+            }
+        }
+
+        stage('Deploy to Minikube') {
+            steps {
+                // KUBECONFIG environment will be applied automatically from environment block
+                sh 'kubectl apply -f deployment.yaml --validate=false'
+                sh 'kubectl apply -f service.yaml --validate=false'
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline finished!'
+        }
+        failure {
+            echo 'Pipeline failed! Check logs for errors.'
+        }
+    }
+}
