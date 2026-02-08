@@ -13,5 +13,15 @@ pipeline {
                 echo 'Deploy stage'
             }
         }
+ stage('Deploy to Minikube') {
+            steps {
+                script {
+                    sh '''
+                    kubectl apply -f deployment.yaml
+                    kubectl expose deployment nginx-deployment --type=NodePort --port=80
+                    '''
+                }
+            }
+        }
     }
 }
