@@ -6,7 +6,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-              echo ' git 'https://github.com/kedarwatile1/project2.git''
+              echo 'kedar'
             }
         }
         stage('Build Docker Image') {
