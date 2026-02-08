@@ -1,15 +1,20 @@
 pipeline {
-    agent any
+    agent {
+        dockerfile {
+            filename 'Dockerfile.jenkins-agent'
+            args '-v $HOME/.kube:/root/.kube'
+        }
+    }
 
     environment {
-        KUBECONFIG = "/var/jenkins_home/.kube/config"
+        KUBECONFIG = "/root/.kube/config"
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                echo "Source code checked out by Jenkins SCM"
+                echo "Code already checked out by Jenkins SCM"
             }
         }
 
