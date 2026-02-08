@@ -1,0 +1,77 @@
+pipeline {
+    agent any
+
+    environment {
+        KUBECTL_VERSION = "v1.29.0"
+        KUBECONFIG = "${WORKSPACE}/kubeconfig"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo "Source code checked out by Jenkins SCM"
+            }
+        }
+
+        stage('Install kubectl') {
+            steps {
+                sh '''
+                if [ ! -f kubectl ]; then
+                  curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+                  chmod +x kubectl
+                fi
+                '''
+            }
+        }
+
+        stage('Prepare kubeconfig') {
+            steps {
+                sh '''
+                mkdir -p ~/.kube
+
+                # Extract FULL kubeconfig with embedded certs
+                ./kubectl config view --raw > ${KUBECONFIG}
+
+                echo "Kubeconfig prepared for Jenkins"
+                '''
+            }
+        }
+
+        stage('Verify Kubernetes Access') {
+            steps {
+                sh '''
+                ./kubectl --kubeconfig=${KUBECONFIG} version --client
+                ./kubectl --kubeconfig=${KUBECONFIG} get nodes
+                '''
+            }
+        }
+
+        stage('Deploy to Minikube') {
+            steps {
+                sh '''
+                ./kubectl --kubeconfig=${KUBECONFIG} apply -f deployment.yaml
+                ./kubectl --kubeconfig=${KUBECONFIG} apply -f service.yaml
+                '''
+            }
+        }
+
+        stage('Verify Pods') {
+            steps {
+                sh '''
+                ./kubectl --kubeconfig=${KUBECONFIG} get pods
+                ./kubectl --kubeconfig=${KUBECONFIG} get svc
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Deployment Successful"
+        }
+        failure {
+            echo "❌ Deployment Failed"
+        }
+    }
+}
