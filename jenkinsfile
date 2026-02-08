@@ -31,8 +31,8 @@ pipeline {
         stage('Verify Kubernetes Access') {
             steps {
                 sh '''
-                kubectl version --client
-                kubectl config current-context
+                ./kubectl version --client
+                ./kubectl config current-context
                 '''
             }
         }
@@ -40,8 +40,8 @@ pipeline {
         stage('Deploy to Minikube') {
             steps {
                 sh '''
-                kubectl apply -f ./deployment.yaml
-                kubectl apply -f ./service.yaml
+                ./kubectl apply -f ./deployment.yaml
+                ./kubectl apply -f ./service.yaml
                 '''
             }
         }
@@ -49,8 +49,8 @@ pipeline {
         stage('Verify Pods') {
             steps {
                 sh '''
-                kubectl get pods
-                kubectl get svc
+                ./kubectl get pods
+                ./kubectl get svc
                 '''
             }
         }
