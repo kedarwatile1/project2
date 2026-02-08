@@ -1,41 +1,53 @@
 pipeline {
     agent any
+
     environment {
-        DOCKER_IMAGE = "bitnami/kubectl:latest"
+        KUBECONFIG = "/var/jenkins_home/.kube/config"
     }
+
     stages {
+
         stage('Checkout') {
             steps {
-              echo 'kedar'
+                echo "Checking out code"
+                git 'https://github.com/kedarwatile1/project2.git'
             }
         }
-        stage('Build Docker Image') {
+
+        stage('Verify Kubernetes Access') {
             steps {
-                script {
-                    sh '''
-                    eval $(minikube -p minikube docker-env)
-                    docker build -t $DOCKER_IMAGE .
-                    '''
-                }
+                sh '''
+                kubectl version --client
+                kubectl get nodes
+                '''
             }
         }
+
         stage('Deploy to Minikube') {
             steps {
-                script {
-                    sh '''
-                    kubectl apply -f deployment.yaml
-                    kubectl expose deployment nginx-deployment --type=NodePort --port=80
-                    '''
-                }
+                sh '''
+                kubectl apply -f deployment.yaml
+                kubectl apply -f service.yaml
+                '''
+            }
+        }
+
+        stage('Verify Pods') {
+            steps {
+                sh '''
+                kubectl get pods
+                kubectl get svc
+                '''
             }
         }
     }
+
     post {
         success {
-            echo 'Deployment Successful!'
+            echo "✅ Deployment Successful"
         }
         failure {
-            echo 'Deployment Failed!'
+            echo "❌ Deployment Failed"
         }
     }
 }
