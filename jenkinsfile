@@ -6,19 +6,59 @@ pipeline {
     }
   }
   stages {
-    stage('Checkout') {
-      steps {
-        sh 'echo passed'
-        //git branch: 'main', url: 'https://github.com/iam-veeramalla/Jenkins-Zero-To-Hero.git'
-      }
+        stage('Checkout') {
+            steps {
+              sh 'echo passed'
+            // echo   git 'https://github.com/kedarwatile1/project2.git'
+            }
+        }
+    stage('Install kubectl') {
+            steps {
+                sh '''
+                if ! command -v kubectl >/dev/null 2>&1; then
+                  echo "Installing kubectl..."
+                  curl -LO https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl
+                  chmod +x kubectl
+                 eval $(minikube -p minikube docker-env)
+                docker build -t $DOCKER_IMAGE .
+                kubectl apply -f deployment.yaml
+                kubectl expose deployment nginx-deployment --type=NodePort --port=80
+                 # sudo mv kubectl /usr/local/bin/
+                else
+                  echo "kubectl already installed"
+                fi
+               # kubectl version --client
+                '''
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh '''
+                    echo 'passed'
+                  // # eval $(minikube -p minikube docker-env)
+                   // # docker build -t $DOCKER_IMAGE .
+                    '''
+                }
+            }
+        }
+        stage('Deploy to Minikube') {
+            steps {
+                script {
+                    sh '''
+                  // # kubectl apply -f deployment.yaml
+                   // # kubectl expose deployment nginx-deployment --type=NodePort --port=80
+                    '''
+                }
+            }
+        }
     }
-    stage('Build and Test') {
-      steps {
-        sh 'ls -ltr'
-        // build the project and create a JAR file
-       docker build -t $DOCKER_IMAGE .
-      kubectl apply -f deployment.yaml
-      kubectl expose deployment nginx-deployment --type=NodePort --port=80
-
-      }
+    post {
+        success {
+            echo 'Deployment Successful!'
+        }
+        failure {
+            echo 'Deployment Failed!'
+        }
     }
+}
