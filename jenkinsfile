@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        KUBECONFIG = "$HOME/.kube/config"
+        KUBECTL_VERSION = "v1.29.0"
     }
 
     stages {
@@ -13,11 +13,26 @@ pipeline {
             }
         }
 
+        stage('Install kubectl') {
+            steps {
+                sh '''
+                if ! command -v kubectl >/dev/null 2>&1; then
+                  echo "kubectl not found. Installing kubectl..."
+                  curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+                  chmod +x kubectl
+                  mv kubectl /usr/local/bin/
+                else
+                  echo "kubectl already installed"
+                fi
+                '''
+            }
+        }
+
         stage('Verify Kubernetes Access') {
             steps {
                 sh '''
                 kubectl version --client
-                kubectl get nodes
+                kubectl config current-context
                 '''
             }
         }
@@ -25,8 +40,8 @@ pipeline {
         stage('Deploy to Minikube') {
             steps {
                 sh '''
-                kubectl apply -f deployment.yaml
-                kubectl apply -f service.yaml
+                kubectl apply -f k8s/deployment.yaml
+                kubectl apply -f k8s/service.yaml
                 '''
             }
         }
