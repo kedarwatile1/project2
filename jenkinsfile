@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        KUBECTL_VERSION = "v1.29.0"
         KUBECONFIG = "${WORKSPACE}/kubeconfig"
     }
 
@@ -10,16 +9,19 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                echo "Source code checked out by Jenkins SCM"
+                echo 'Source code checked out by Jenkins SCM'
             }
         }
 
-        stage('Install kubectl') {
+        stage('Install kubectl (local)') {
             steps {
                 sh '''
                 if [ ! -f kubectl ]; then
-                  curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+                  echo "Installing kubectl locally in workspace"
+                  curl -LO https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl
                   chmod +x kubectl
+                else
+                  echo "kubectl already present"
                 fi
                 '''
             }
@@ -28,12 +30,34 @@ pipeline {
         stage('Prepare kubeconfig') {
             steps {
                 sh '''
-                mkdir -p ~/.kube
-
-                # Extract FULL kubeconfig with embedded certs
+                # Extract minikube server info from default config
                 ./kubectl config view --raw > ${KUBECONFIG}
+                echo "Kubeconfig copied into Jenkins workspace"
+                '''
+            }
+        }
 
-                echo "Kubeconfig prepared for Jenkins"
+        stage('Set Minikube Context (AUTH FIX)') {
+            steps {
+                sh '''
+                # Extract Minikube API IP
+                MINIKUBE_SERVER=$(./kubectl config view -o jsonpath='{.clusters[?(@.name=="minikube")].cluster.server}')
+                MINIKUBE_IP=$(echo $MINIKUBE_SERVER | sed 's|https://||' | sed 's|:.*||')
+
+                echo "Using Minikube IP: $MINIKUBE_IP"
+
+                # Override cluster to skip TLS auth (LOCAL DEV SAFE)
+                ./kubectl config set-cluster minikube \
+                  --server=https://$MINIKUBE_IP:8443 \
+                  --insecure-skip-tls-verify=true \
+                  --kubeconfig=${KUBECONFIG}
+
+                ./kubectl config set-context minikube \
+                  --cluster=minikube \
+                  --user=minikube \
+                  --kubeconfig=${KUBECONFIG}
+
+                ./kubectl config use-context minikube --kubeconfig=${KUBECONFIG}
                 '''
             }
         }
@@ -41,7 +65,6 @@ pipeline {
         stage('Verify Kubernetes Access') {
             steps {
                 sh '''
-                ./kubectl --kubeconfig=${KUBECONFIG} version --client
                 ./kubectl --kubeconfig=${KUBECONFIG} get nodes
                 '''
             }
@@ -59,7 +82,7 @@ pipeline {
         stage('Verify Pods') {
             steps {
                 sh '''
-                ./kubectl --kubeconfig=${KUBECONFIG} get pods
+                ./kubectl --kubeconfig=${KUBECONFIG} get pods -o wide
                 ./kubectl --kubeconfig=${KUBECONFIG} get svc
                 '''
             }
@@ -68,10 +91,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Deployment Successful"
+            echo '✅ Deployment Successful'
         }
         failure {
-            echo "❌ Deployment Failed"
+            echo '❌ Deployment Failed'
         }
     }
 }
