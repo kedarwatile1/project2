@@ -2,8 +2,7 @@ pipeline {
     agent any
 
     environment {
-        KUBECONFIG = "/var/jenkins_home/.kube/config"
-        KUBECTL = "/usr/local/bin/kubectl"
+        KUBECONFIG = "$HOME/.kube/config"
     }
 
     stages {
@@ -17,8 +16,8 @@ pipeline {
         stage('Verify Kubernetes Access') {
             steps {
                 sh '''
-                $KUBECTL version --client
-                $KUBECTL get nodes
+                kubectl version --client
+                kubectl get nodes
                 '''
             }
         }
@@ -26,8 +25,8 @@ pipeline {
         stage('Deploy to Minikube') {
             steps {
                 sh '''
-                $KUBECTL apply -f deployment.yaml
-                $KUBECTL apply -f service.yaml
+                kubectl apply -f deployment.yaml
+                kubectl apply -f service.yaml
                 '''
             }
         }
@@ -35,8 +34,8 @@ pipeline {
         stage('Verify Pods') {
             steps {
                 sh '''
-                $KUBECTL get pods
-                $KUBECTL get svc
+                kubectl get pods
+                kubectl get svc
                 '''
             }
         }
