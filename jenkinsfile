@@ -6,6 +6,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
+              sh 'echo passed'
             // echo   git 'https://github.com/kedarwatile1/project2.git'
             }
         }
