@@ -1,0 +1,68 @@
+pipeline {
+    agent any
+
+    environment {
+        KUBECONFIG = "${HOME}/.kube/config"
+    }
+
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                git url: 'https://github.com/kedarwatile1/project2.git', branch: 'main'
+            }
+        }
+
+        stage('Install kubectl') {
+            steps {
+                sh '''
+                if ! command -v kubectl >/dev/null 2>&1; then
+                  echo "Installing kubectl..."
+                  curl -LO https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl
+                  chmod +x kubectl
+                  sudo mv kubectl /usr/local/bin/
+                else
+                  echo "kubectl already installed"
+                fi
+                kubectl version --client
+                '''
+            }
+        }
+
+        stage('Verify Cluster') {
+            steps {
+                sh '''
+                kubectl get nodes
+                kubectl get ns
+                '''
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh '''
+                kubectl apply -f deployment.yaml
+                kubectl apply -f service.yaml
+                '''
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                sh '''
+                kubectl get pods
+                kubectl get svc
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Deployment Successful"
+        }
+        failure {
+            echo "❌ Deployment Failed"
+        }
+    }
+}
